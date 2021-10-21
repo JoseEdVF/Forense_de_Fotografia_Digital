@@ -251,6 +251,7 @@ def first_ifd_process(datos, offset, tiff_header, orden):
 
     ifd +='----------Oth IFD Metadatos -------------\n'
     metadatos_ifd = {}
+    metadatos_ifd['----------Oth IFD Metadatos -------------'] = ''
     for i in range(len(final_value)):
         if final_data_name[i] is None:
             continue
@@ -374,8 +375,12 @@ def exif_ifd_process(datos, exif_offset, tiff_header, orden):
         if type(final_value_exif[i]) == type([]):
             final_value_exif[i] = final_value_exif[i][0]
     '''
+
+    metadatos_exif = {}
+
     exif = ''
     exif += '------------EXIF IFD Metadatos ----------------\n'
+    metadatos_exif['------------EXIF IFD Metadatos ----------------'] = ''
 
     for i in range(num_campos_exif):
         if final_name_exif[i] is None:
@@ -383,16 +388,22 @@ def exif_ifd_process(datos, exif_offset, tiff_header, orden):
         else:
             if tipo_val_exif[0, i] == 1:
                 exif += f'{final_name_exif[i]} = {final_value_exif[i]}\n'
+                metadatos_exif[final_name_exif[i]] = final_value_exif[i]
             elif tipo_val_exif[0, i] == 3:
                 exif += f'{final_name_exif[i]} = {final_value_exif[i]}\n'
+                metadatos_exif[final_name_exif[i]] = final_value_exif[i]
             elif tipo_val_exif[0, i] == 4:
                 exif += f'{final_name_exif[i]} = {final_value_exif[i]}\n'
+                metadatos_exif[final_name_exif[i]] = final_value_exif[i]
             elif tipo_val_exif[0, i] == 5:
                 exif += f'{final_name_exif[i]} = {final_value_exif[i]}\n'
+                metadatos_exif[final_name_exif[i]] = final_value_exif[i]
             elif tipo_val_exif[0, i] == 10:
                 exif += f'{final_name_exif[i]} = {final_value_exif[i]}\n'
+                metadatos_exif[final_name_exif[i]] = final_value_exif[i]
             else:
                 exif += f'{final_name_exif[i]} = {final_value_exif[i]}\n'
+                metadatos_exif[final_name_exif[i]] = final_value_exif[i]
 
     #Calculo de brillo
 
@@ -400,8 +411,10 @@ def exif_ifd_process(datos, exif_offset, tiff_header, orden):
     brillo = ''
     if not exif_tag[9] in aux[0] and not exif_tag[3] in aux[0]:
         brillo += 'No es posible calcular el brillo\n'
+        metadatos_exif['Brillo'] = 'No es posible calcular el brillo'
     elif not exif_tag[7] in aux[0] or not exif_tag[4] in aux[0]:
         brillo += 'No es posible calcular el brillo\n'
+        metadatos_exif['Brillo'] = 'No es posible calcular el brillo'
     else:
         if not exif_tag[7] in aux[0]:
             t = final_value_exif[aux[0].index(exif_tag[9])]
@@ -412,8 +425,9 @@ def exif_ifd_process(datos, exif_offset, tiff_header, orden):
         bamb = n[0] ** 2 / (t[0] * s)
         bv = 3.32 * math.log(bamb, 10) + 1.66
         brillo += 'Brillo (APEX) = {:.4f}\n'.format(bv)
+        metadatos_exif['Brillo (APEX)'] = '{:.4f}'.format(bv)
 
-    return exif, brillo
+    return exif, brillo, metadatos_exif
 
     '''
     try:
@@ -518,6 +532,8 @@ def gps_process(datos, gps_offset, tiff_header, orden):
     gps = ''
 
     gps += '---------------GPS IFD Metadatos-----------------\n'
+    gps_dict = {}
+    gps_dict['---------------GPS IFD Metadatos-----------------'] = ''
 
     for i in range(num_campos_gps):
         if final_name_gps[i] is None:
@@ -525,17 +541,24 @@ def gps_process(datos, gps_offset, tiff_header, orden):
         else:
             if tipo_val_gps[0, i] == 1:
                 gps += f'{final_name_gps[i]} = {final_value_gps[i]}\n'
+                gps_dict[final_name_gps[i]] = final_value_gps[i]
             elif tipo_val_gps[0, i] == 2:
                 gps += f'{final_name_gps[i]} = {final_value_gps[i]}\n'
+                gps_dict[final_name_gps[i]] = final_value_gps[i]
             elif tipo_val_gps[0, i] == 3:
                 gps += f'{final_name_gps[i]} = {final_value_gps[i]}\n'
+                gps_dict[final_name_gps[i]] = final_value_gps[i]
             elif tipo_val_gps[0, i] == 4:
                 gps += f'{final_name_gps[i]} = {final_value_gps[i]}\n'
+                gps_dict[final_name_gps[i]] = final_value_gps[i]
             elif tipo_val_gps[0, i] == 5:
                 gps += f'{final_name_gps[i]} = {final_value_gps[i]}\n'
+                gps_dict[final_name_gps[i]] = final_value_gps[i]
             elif tipo_val_gps[0, i] == 10:
                 gps += f'{final_name_gps[i]} = {final_value_gps[i]}\n'
+                gps_dict[final_name_gps[i]] = final_value_gps[i]
             else:
                 gps += f'{final_name_gps[i]} = {final_value_gps[i]}\n'
+                gps_dict[final_name_gps[i]] = final_value_gps[i]
 
-    return gps
+    return gps, gps_dict
