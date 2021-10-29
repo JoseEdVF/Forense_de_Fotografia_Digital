@@ -199,7 +199,7 @@ def first_ifd_process(datos, offset, tiff_header, orden):
     tag_val = np.zeros((1, num_campos), dtype='int64')
     tipo_val = np.zeros((1, num_campos), dtype='int64')
     count_val = np.zeros((1, num_campos), dtype='int64')
-    off_val = np.zeros((1, num_campos), dtype='int64')
+    off_val = [[None for i in range(num_campos)]]
 
     for i in range(num_campos):
         fin = inicio+12
@@ -221,14 +221,17 @@ def first_ifd_process(datos, offset, tiff_header, orden):
         flag_offset = val_o_offset[ind]
 
         if flag_offset == 1:
-            #TIFF_HEADER + off_val(i)
-            count = count_val[0, i]
-            sp = tiff_header + off_val[0, i]
-            count_byte = get_byte_number(tipo_val[0, i], count)
-            b = datos[int(sp):int(sp+count_byte)]
-            final_value.append(get_final_value(b, tipo_val[0, i], int(count), orden))
+            if type(off_val[0][i]) is str:
+                final_value.append(off_val[0][i])
+            else:
+                #TIFF_HEADER + off_val(i)
+                count = count_val[0, i]
+                sp = tiff_header + off_val[0][i]
+                count_byte = get_byte_number(tipo_val[0, i], count)
+                b = datos[int(sp):int(sp+count_byte)]
+                final_value.append(get_final_value(b, tipo_val[0, i], int(count), orden))
         else:
-            final_value.append(off_val[0, i])
+            final_value.append(off_val[0][i])
 
         final_data_name.append(image_data_name[ind])
 
@@ -513,13 +516,16 @@ def gps_process(datos, gps_offset, tiff_header, orden):
         flag_offset = offset_flag[ind]
 
         if flag_offset == 1:
-            count = count_val_gps[0, i]
-            #Contabiliza desde el tiff_header + 1
-            sp = tiff_header + off_val_gps[i]
-            #Cuantos se leeran
-            count_byte = get_byte_number(tipo_val_gps[0, i], count)
-            b = datos[sp:sp+count_byte]
-            final_value_gps.append(get_final_value(b, tipo_val_gps[0, i], count, orden))
+            if type(off_val_gps[i]) is str:
+                final_value_gps.append(off_val_gps[i])
+            else:
+                count = count_val_gps[0, i]
+                #Contabiliza desde el tiff_header + 1
+                sp = tiff_header + off_val_gps[i]
+                #Cuantos se leeran
+                count_byte = get_byte_number(tipo_val_gps[0, i], count)
+                b = datos[sp:sp+count_byte]
+                final_value_gps.append(get_final_value(b, tipo_val_gps[0, i], count, orden))
         else:
             final_value_gps.append(off_val_gps[i])
 

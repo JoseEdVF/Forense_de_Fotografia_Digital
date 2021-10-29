@@ -13,15 +13,32 @@ def matriz_cuant(datos):
     for i in range(len(aux)):
         if datos[aux[i]] == 219:
             tag_db.append(i)
-    matriz_dict = {}
-    if len(tag_db) == 1:
-        matrices += 'No disponible'
-        matriz_dict['No disponible'] = ''
-        return matrices
 
     tag_mquant = []
     for i in tag_db:
         tag_mquant.append(tag_ff[i])
+
+    matriz_dict = {}
+    matriz_dict['-------------Matriz de Cuantificacion------------'] = ''
+    if len(tag_db) == 1:
+        vectorqy_thumb = datos[(tag_mquant[0] + 5): (tag_mquant[0] + 68) + 1]
+        vectorqy_thumb = np.array(vectorqy_thumb).reshape((8, 8))
+        matrices += 'Matriz de Luminancia (Y) = \n'
+        matriz_dict['Matriz de Luminancia thumbnail (Y)'] = ''
+        for i in range(8):
+            matrices += f'{vectorqy_thumb[i]}\n'
+            matriz_dict[' ' * i] = str(vectorqy_thumb[i])[1:-1]
+
+        vectorqcr_thumb = datos[tag_mquant[0] + 70: (tag_mquant[0] + 133) + 1]
+        vectorqcr_thumb = np.array(vectorqcr_thumb).reshape((8, 8))
+        matrices += 'Matriz de Cromas (CbCr) = \n'
+        matriz_dict['Matriz de Cromas thumbnail (CbCr)'] = ''
+        for i in range(8):
+            matrices += f'{vectorqcr_thumb[i]}\n'
+            matriz_dict[' ' * (8 + i)] = str(vectorqcr_thumb[i])[1:-1]
+
+        return matrices, matriz_dict
+
     matriz_thumb = {}
     matrices += 'Matrices de cuantificacion de Thumbnail: \n'
     matriz_dict['Matrices de cuantificacion de Thumbnail'] = ''
@@ -31,7 +48,7 @@ def matriz_cuant(datos):
     matriz_dict['Matriz de Luminancia thumbnail (Y)'] = ''
     for i in range(8):
         matrices += f'{vectorqy_thumb[i]}\n'
-        matriz_dict[f'ML T {i+1}'] = str(vectorqy_thumb[i])[1:-1]
+        matriz_dict[' ' * i] = str(vectorqy_thumb[i])[1:-1]
 
 
     vectorqcr_thumb = datos[tag_mquant[0] + 70 : (tag_mquant[0] + 133) + 1]
@@ -40,7 +57,7 @@ def matriz_cuant(datos):
     matriz_dict['Matriz de Cromas thumbnail (CbCr)'] = ''
     for i in range(8):
         matrices += f'{vectorqcr_thumb[i]}\n'
-        matriz_dict[f'MC T{i+1}'] = str(vectorqcr_thumb[i])[1:-1]
+        matriz_dict[' ' * (8+i)] = str(vectorqcr_thumb[i])[1:-1]
     #matriz_dict['Matriz de Cromas thumbnail (CbCr)'] = vectorqcr_thumb
 
     # Matriz de Imagen
@@ -53,7 +70,7 @@ def matriz_cuant(datos):
     matriz_dict['Matriz de Luminancia (Y)'] = ''
     for i in range(8):
         matrices += f'{vectorqy_img[i]}\n'
-        matriz_dict[f'ML I {i + 1}'] = str(vectorqy_img[i])[1:-1]
+        matriz_dict[' ' * (16+i)] = str(vectorqy_img[i])[1:-1]
     #matriz_dict['Matriz de Luminancia (Y)'] = vectorqy_img
 
     vectorqcr_img = datos[tag_mquant[1] + 70: (tag_mquant[1] + 133) + 1]
@@ -62,7 +79,7 @@ def matriz_cuant(datos):
     matriz_dict['Matriz de Cromas (CrCb))'] = ''
     for i in range(8):
         matrices += f'{vectorqcr_img[i]}\n'
-        matriz_dict[f'MC I{i + 1}'] = str(vectorqcr_thumb[i])[1:-1]
+        matriz_dict[' ' * (24+i)] = str(vectorqcr_img[i])[1:-1]
     #matriz_dict['Matriz de Cromas (CrCb)'] = vectorqcr_img
 
     return matrices, matriz_dict

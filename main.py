@@ -45,7 +45,7 @@ class PaginaPrincipal(Frame):
         #En esta sección se declaran todos los widgets que se mostrarán en el frame
 
         label = Label(self, text='Forense de Fotografia', font='Helvetica 20')
-        label.place(x=170, y=30)
+        label.place(x=200, y=30)
 
         #label2 = Label(self, text='Programacion Python', font='Helvetica 20')
         #label2.place(x=220, y=100)
@@ -62,11 +62,11 @@ class PaginaPrincipal(Frame):
         load_image = ImageTk.PhotoImage(load_image)
         img = Label(self, image=load_image)
         img.image = load_image
-        img.place(x=480, y=15)
+        img.place(x=530, y=15)
 
         buton_op1 = Button(self, text='Metadatos', command=lambda: controller.show_frame('Metadatos'))
 
-        buton_op1.place(x=280, y=350)
+        buton_op1.place(x=310, y=350)
 
 class Metadatos(Frame):
     def __init__(self, parent, controller):
@@ -90,10 +90,6 @@ class Metadatos(Frame):
         boton_metadatos = Button(self, text='  Obtener metadatos  ', command=self.obtenerMetadatos)
         boton_metadatos.place(x=400, y=150)
 
-    def borarImagen(self):
-        #global img
-        self.image.destroy()
-
     def subirImagen(self):
         #self.image.destroy()
         # path = None
@@ -102,15 +98,22 @@ class Metadatos(Frame):
             messagebox.showerror(title='Error', message='No es un archivo jpg')
             path = None
             return
+        frame = Frame(width=300, height=200)
+        frame.place(x=30, y=20)
         self.path = path
         load_image = Image.open(path)
         forma = np.array(load_image)
-        load_image = load_image.resize((300, 200), Image.ANTIALIAS)
+        if forma.shape[1] > forma.shape[0]:
+            load_image = load_image.resize((300, 200), Image.ANTIALIAS)
+        elif forma.shape[1] == forma.shape[0]:
+            load_image = load_image.resize((300, 300), Image.ANTIALIAS)
+        else:
+            load_image = load_image.resize((150, 200), Image.ANTIALIAS)
         #load_image.thumbnail((225, 225), Image.ANTIALIAS)
         load_image = ImageTk.PhotoImage(load_image)
-        self.image = Label(image=load_image)
+        self.image = Label(frame, image=load_image)
         self.image.image = load_image
-        self.image.place(x=40, y=20)
+        self.image.place(x=1, y=1)
 
 
     def obtenerMetadatos(self):
@@ -162,13 +165,13 @@ class Metadatos(Frame):
         exif_offset, gps_offset, ifd, metadatos = metadatos_info.first_ifd_process(datos, f_ifd_offset, tiff_header, orden)
         cont = 0
         rows = []
-        frame = Frame(width=500, height=500)
-        frame.place(x=20, y=230)
+        frame = Frame(width=500, height=100)
+        frame.place(x=10, y=250)
         cols = ('Datos', 'Valor')
         listbox = ttk.Treeview(frame, columns=cols, show='headings')
         for col in cols:
             listbox.heading(col, text=col)
-            listbox.column(col, width=280)
+            listbox.column(col, width=330)
         listbox.grid(row=1, column=0, columnspan=2)
 
         for key, value in metadatos['Oth IFD Metadatos'].items():
@@ -367,9 +370,8 @@ def obtener_metadatos():
     text['state'] ='disabled'
 '''
 
-def main():
+def main(path):
     #interfaz()
-    '''
     # Direcciones fijas de metadatos
     SOI = 0
     exif_header = 6
@@ -396,20 +398,25 @@ def main():
 
     # Obtener First 0th-IFD
     f_ifd_offset = num_campos_ad
-    exif_offset, gps_offset = metadatos_info.first_ifd_process(datos, f_ifd_offset, tiff_header, orden)
+    exif_offset, gps_offset, dict, aux = metadatos_info.first_ifd_process(datos, f_ifd_offset, tiff_header, orden)
+    print(dict)
 
     #Obtencion de metadatos EXIF
-    metadatos_info.exif_ifd_process(datos, exif_offset, tiff_header, orden)
+    exif, aux, aux1 = metadatos_info.exif_ifd_process(datos, exif_offset, tiff_header, orden)
+    print(exif)
 
     if gps_offset > 0:
-        metadatos_info.gps_process(datos, gps_offset, tiff_header, orden)
+        gps, aux = metadatos_info.gps_process(datos, gps_offset, tiff_header, orden)
+        print(gps)
     else:
         print('--------------GPS IFD----------------')
         print('Datos de GPS no disponible')
 
     print('-------------Matriz de Cuantificacion------------')
-    metadatos_matriz.matriz_cuant(datos)
-    '''
+    matriz, aux = metadatos_matriz.matriz_cuant(datos)
+
+    print(matriz)
+
 
 
 def abrir_imagen_bin(path):
@@ -447,7 +454,6 @@ def check_exif(datos):
 
 if __name__ == '__main__':
     '''
-    dir = 'C:/Users/laloe/Documents/Metadatos_python/FOTOS'
     tel = []
     for i in os.listdir(dir):
         tel.append(os.path.join(dir, i))
@@ -460,7 +466,7 @@ if __name__ == '__main__':
         main(i)
     '''
     app = ForenseFotografia()
-    app.geometry('600x500')
+    app.geometry('680x500')
     app.resizable(width=False, height=False)
     app.mainloop()
 
