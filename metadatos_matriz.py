@@ -1,5 +1,55 @@
 import numpy as np
 
+def matrices(hex_datos):
+    num_mat = 0
+    place = []
+    for i in range(len(hex_datos)):
+        if hex_datos[i] == 'ff' and hex_datos[i+1] == 'db':
+            place.append(i+1)
+            num_mat += 1
+
+    matrices = []
+    size_m = 0
+    for i in range(len(place)):
+        try:
+            size_m = int(hex_datos[place[i] + 2])
+        except:
+            continue
+        inicio_mat = place[i] + 4
+        if size_m > 67:
+            espacio_mat = inicio_mat + 65
+            matrices.append(hex_datos[inicio_mat: inicio_mat + 64])
+            matrices.append(hex_datos[espacio_mat: espacio_mat + 64])
+        else:
+            matrices.append(hex_datos[inicio_mat: inicio_mat + 64])
+
+    for i in range(len(matrices)):
+        for j in range(len(matrices[i])):
+            matrices[i][j] = int(matrices[i][j], 16)
+
+    cont = 1
+    mat_dict = {}
+    mat_dict['Matriz'] = '-------------Matriz de Cuantificacion------------'
+    for i in range(len(matrices)):
+        aux = np.array(matrices[i])
+        aux = aux.reshape((8,8))
+        if i == 0:
+            mat_dict['Thumbnail'] = 'Matrices de cuantificacion de Thumbnail'
+            mat_dict['Thumbnail Y'] = 'Matriz de Luminancia thumbnail (Y)'
+        elif i == 1:
+            mat_dict['Thumbnail CbCr'] = 'Matriz de Cromas thumbnail (CbCr)'
+        elif i == 2:
+            mat_dict['Imagen Primaria'] = 'Matrices de Cuantificacion de la Imagen Primaria'
+            mat_dict['Imagen Primaria Y'] = 'Matriz de Luminancia (Y)'
+        elif i == 3:
+            mat_dict['Imagen Primaria CbCr'] = 'Matriz de Cromas (CbCr)'
+        elif i > 3:
+            mat_dict['Info Extra'] = 'Matriz extra'
+        for j in range(8):
+            mat_dict[' ' * cont] = aux[j]
+            cont += 1
+    return mat_dict
+
 def matriz_cuant(datos):
     tag_ff = []
     aux = []
