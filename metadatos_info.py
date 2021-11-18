@@ -568,3 +568,72 @@ def gps_process(datos, gps_offset, tiff_header, orden):
                 gps_dict[final_name_gps[i]] = final_value_gps[i]
 
     return gps, gps_dict
+
+def brightness(metadatos):
+    escena = []
+    try:
+        fnumber = str(metadatos['EXIF FNumber']).split('/')
+        if len(fnumber) == 2:
+            fnumber = int(fnumber[0]) / int(fnumber[1])
+        else:
+            fnumber = int(str(metadatos['EXIF FNumber']))
+        etime = str(metadatos['EXIF ExposureTime']).split('/')
+        if len(etime) == 2:
+            etime = int(etime[0]) / int(etime[1])
+        else:
+            etime = int(str(metadatos['EXIF ExposureTime']))
+
+        isospeed = str(metadatos['EXIF ISOSpeedRatings']).split('/')
+        if len(isospeed) == 2:
+            isospeed = int(isospeed[0]) / int(isospeed[1])
+        else:
+            isospeed = int(str(metadatos['EXIF ISOSpeedRatings']))
+        bamb = fnumber ** 2 / (etime * isospeed)
+        bv = 3.32 * math.log(bamb, 10) + 1.66
+        metadatos['Brightness'] = bv
+    except:
+        metadatos['Brightness'] = 'No se puede calcular el brillo'
+
+    return metadatos
+
+def huffman():
+    pass
+
+def start_of_frame(hex_datos, orden):
+    for i in range(len(hex_datos)):
+        if len(hex_datos[i]) == 1:
+            hex_datos[i] = '0' + hex_datos[i]
+
+    place = []
+    for i in range(len(hex_datos)):
+        if hex_datos[i] == 'ff' and hex_datos[i + 1] == 'c0':
+            place.append(i + 1)
+    height = []
+    width = []
+    for i in range(len(place)):
+        if hex_datos[place[i] + 1] == '00' and hex_datos[place[i] + 2] == '11':
+            inicio_height = place[i] + 4
+            inicio_width = inicio_height + 2
+
+            height.append(hex_datos[inicio_height: inicio_width])
+            width.append(hex_datos[inicio_width: inicio_width + 2])
+        else:
+            continue
+    ans = {}
+    aux = ''
+    if len(height) == 1:
+        ans['Image Dimensions'] = f'{int(aux.join(height[0]), 16)} x {int(aux.join(width[0]), 16)}'
+    elif len(height) == 2:
+        ans['Thumbnail Dimensions'] = f'{int(aux.join(height[0]), 16)} x {int(aux.join(width[0]), 16)}'
+        ans['Image Dimensions'] = f'{int(aux.join(height[1]), 16)} x {int(aux.join(width[1]), 16)}'
+    else:
+        ans['Dimensiones'] = 'Dimensiones'
+        for i in range(len(height)):
+            height[i] = ''.join(height[i])
+            width[i] = ''.join(width[i])
+            ans[' '*i] = f'{int(height[i], 16)} x {int(width[i], 16)}'
+
+    jpeg_mode = hex_datos[inicio_width + 4]
+    ans['JPEG Mode'] = jpeg_mode
+
+    return ans

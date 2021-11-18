@@ -1,6 +1,13 @@
 import numpy as np
 
 def matrices(hex_datos):
+    ZigZag_order = [[0, 0], [0, 1], [1, 0], [2, 0], [1, 1], [0, 2], [0, 3], [1, 2], [2, 1], [3, 0], [4, 0],
+                    [3, 1], [2, 2], [1, 3], [0, 4], [0, 5], [1, 4], [2, 3], [3, 2], [4, 1], [5, 0], [6, 0],
+                    [5, 1], [4, 2], [3, 3], [2, 4], [1, 5], [0, 6], [0, 7], [1, 6], [2, 5], [3, 4], [4, 3],
+                    [5, 2], [6, 1], [7, 0], [7, 1], [6, 2], [5, 3], [4, 4], [3, 5], [2, 6], [1, 7], [2, 7],
+                    [3, 6], [4, 5], [5, 4], [6, 3], [7, 2], [7, 3], [6, 4], [5, 5], [4, 6], [3, 7], [4, 7],
+                    [5, 6], [6, 5], [7, 4], [7, 5], [6, 6], [5, 7], [6, 7], [7, 6], [7, 7]]
+
     num_mat = 0
     place = []
     for i in range(len(hex_datos)):
@@ -11,21 +18,32 @@ def matrices(hex_datos):
     matrices = []
     size_m = 0
     for i in range(len(place)):
-        try:
-            size_m = int(hex_datos[place[i] + 2])
-        except:
+        if hex_datos[place[i] + 2] != '84' and hex_datos[place[i] + 2] != '43':
             continue
-        inicio_mat = place[i] + 4
-        if size_m > 67:
-            espacio_mat = inicio_mat + 65
-            matrices.append(hex_datos[inicio_mat: inicio_mat + 64])
-            matrices.append(hex_datos[espacio_mat: espacio_mat + 64])
         else:
-            matrices.append(hex_datos[inicio_mat: inicio_mat + 64])
+            try:
+                size_m = int(hex_datos[place[i] + 2])
+            except:
+                continue
+            inicio_mat = place[i] + 4
+            if size_m > 67:
+                espacio_mat = inicio_mat + 65
+                matrices.append(hex_datos[inicio_mat: inicio_mat + 64])
+                matrices.append(hex_datos[espacio_mat: espacio_mat + 64])
+            else:
+                matrices.append(hex_datos[inicio_mat: inicio_mat + 64])
 
     for i in range(len(matrices)):
         for j in range(len(matrices[i])):
             matrices[i][j] = int(matrices[i][j], 16)
+
+    aux = np.zeros((8, 8), dtype='int32')
+    for i in range(len(matrices)):
+        for j in range(len(matrices[i])):
+            ind = ZigZag_order[j]
+            aux[ind[0], ind[1]] = matrices[i][j]
+        matrices[i] = aux
+        aux = np.zeros((8, 8), dtype='int32')
 
     cont = 1
     mat_dict = {}

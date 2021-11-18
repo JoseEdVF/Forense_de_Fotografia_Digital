@@ -49,14 +49,14 @@ class PaginaPrincipal(Frame):
         #label2 = Label(self, text='Programacion Python', font='Helvetica 20')
         #label2.place(x=220, y=100)
 
-        load_image = Image.open('./IPN-logo-BB9124D61B-seeklogo.com.png')
+        load_image = Image.open('./img/IPN-logo-BB9124D61B-seeklogo.com.png')
         load_image.thumbnail((100, 100), Image.ANTIALIAS)
         load_image = ImageTk.PhotoImage(load_image)
         img = Label(self, image=load_image)
         img.image = load_image
         img.place(x=40, y=15)
 
-        load_image = Image.open('./esimetwitter_400x400.png')
+        load_image = Image.open('./img/esimetwitter_400x400.png')
         load_image.thumbnail((100, 100), Image.ANTIALIAS)
         load_image = ImageTk.PhotoImage(load_image)
         img = Label(self, image=load_image)
@@ -83,15 +83,16 @@ class Metadatos(Frame):
         label = Label(self, text='Metadatos', font='Helvetica 20')
         label.place(x=400, y=20)
 
-        boton_subir_imagen = Button(self, text='Selecciona un archivo', command=lambda : [self.subirImagen()])
+        boton_subir_imagen = Button(self, text='Selecciona un archivo', command=lambda : [self.subirImagen(), self.obtenerMetadatos()])
         boton_subir_imagen.place(x=400, y=75)
-
-        boton_metadatos = Button(self, text='  Obtener metadatos  ', command=self.obtenerMetadatos)
-        boton_metadatos.place(x=400, y=150)
 
     def subirImagen(self):
         # path = None
         paths = askopenfilenames()
+        if paths == '':
+            messagebox.showerror(title='Error', message='Selecciona un archivo')
+            paths = None
+            return
         if len(paths) > 1:
             self.path = paths
             messagebox.showinfo(title='Info', message='Seleccionaste varios archivos,\n '
@@ -166,6 +167,11 @@ class Metadatos(Frame):
                     file = open(path, 'rb')
                     metadata = exifread.process_file(file)
 
+                dimensiones = metadatos_info.start_of_frame(hex_datos, orden)
+                metadata = metadatos_info.brightness(metadata)
+                for key, value in dimensiones.items():
+                    metadata[key] = value
+
                 for key, value in metadata.items():
                     res += f'{key} = {value}\n'
 
@@ -173,10 +179,10 @@ class Metadatos(Frame):
                 mat_dict = metadatos_matriz.matrices(hex_datos)
                 for key, value in mat_dict.items():
                     res += f'{value}\n'
-                #Se guardan los resultados
-                out = open('respuesta.txt', 'w+')
-                for i in range(len(res)):
-                    out.write(res[i])
+            #Se guardan los resultados
+            out = open('respuesta.txt', 'w+')
+            for i in range(len(res)):
+                out.write(res[i])
 
             messagebox.showinfo(title='Info', message='Resultados se guardaron en \'respuesta.txt\'')
         else:
@@ -215,6 +221,10 @@ class Metadatos(Frame):
                 file = open(self.path, 'rb')
                 metadata = exifread.process_file(file)
 
+            dimensiones = metadatos_info.start_of_frame(hex_datos, orden)
+            metadata = metadatos_info.brightness(metadata)
+            for key, value in dimensiones.items():
+                metadata[key] = value
             cont = 0
             rows = []
             frame = Frame(width=500, height=100)
@@ -228,6 +238,8 @@ class Metadatos(Frame):
 
             for key, value in metadata.items():
                 listbox.insert('', 'end', values=(key, value))
+
+
 
             # ------Nueva implementacion--------
             mat_dict = metadatos_matriz.matrices(hex_datos)
