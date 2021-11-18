@@ -1,9 +1,10 @@
 import io
 import os
 import exifread
+import exporter
+import model
 import numpy as np
-import metadatos_matriz
-import metadatos_info
+import additional_metadata
 from tkinter import Tk, Frame, Button, Label, Text, INSERT, PhotoImage, messagebox, Entry, NSEW, END, GROOVE, ttk
 from tkinter.filedialog import askopenfilenames
 from PIL import Image, ImageTk
@@ -110,7 +111,7 @@ class Metadatos(Frame):
                 return
             frame = Frame(width=300, height=200)
             frame.place(x=30, y=20)
-            self.path = path
+            self.path = paths
             load_image = Image.open(path)
             forma = np.array(load_image)
             if forma.shape[1] > forma.shape[0]:
@@ -129,63 +130,16 @@ class Metadatos(Frame):
         if self.path is None:
             messagebox.showerror(title='Error', message='Primero selecciona una imagen')
             return
-        if type(self.path) is tuple:
-            res = ''
-            for path in self.path:
-                res += f'El archivo actual es = {path}\n'
-                # Variables que indican el inicio de diferentes metadatos
-                SOI = 0
-                exif_header = 6
-                tiff_header = 12
-                num_campos_ad = 21
-                inicio_campos = 23
+        files_meta_tags = []
+        for path in self.path:
+            meta_tags = model.ImageMetadata()
+            meta_tags.file_name = path
 
-                # Se obtienen los datos de la imagen en decimal y hexadecimal.
-                self.image = Image.open(path)
-                datos, hex_datos = abrir_imagen_bin(path)
+            if '.JPG' not in path and '.jpg' not in path and '.JPEG' not in path and '.jpeg' not in path:
+                meta_tags.picture_type = 'Otro'
+                files_meta_tags.append(meta_tags)
+                continue
 
-                # Orden: Big Endian o Little Endian
-                orden = endian(datos, tiff_header)
-
-                # Revisar si el archivo es JPEG o no (JPEG == ffd8)
-                if hex_datos[SOI][0] != 'f' or hex_datos[SOI][1] != 'f' or hex_datos[SOI + 1][0] != 'd' or \
-                        hex_datos[SOI + 1][
-                            1] != '8':
-                    res += f'{path} No es un archivo JPEG\n'
-                    continue
-
-                elif not check_exif(datos[exif_header: tiff_header]):
-                    res += f'{path} El archivo no es archivo EXIF\n'
-                    continue
-
-                # --------Nueva implementacion--------
-                try:
-                    file = open(path, 'rb')
-                    metadata = exifread.process_file(file)
-                    metadata.pop('JPEGThumbnail')
-                except:
-                    file = open(path, 'rb')
-                    metadata = exifread.process_file(file)
-
-                dimensiones = metadatos_info.start_of_frame(hex_datos, orden)
-                metadata = metadatos_info.brightness(metadata)
-                for key, value in dimensiones.items():
-                    metadata[key] = value
-
-                for key, value in metadata.items():
-                    res += f'{key} = {value}\n'
-
-                # ------Nueva implementacion--------
-                mat_dict = metadatos_matriz.matrices(hex_datos)
-                for key, value in mat_dict.items():
-                    res += f'{value}\n'
-            #Se guardan los resultados
-            out = open('respuesta.txt', 'w+')
-            for i in range(len(res)):
-                out.write(res[i])
-
-            messagebox.showinfo(title='Info', message='Resultados se guardaron en \'respuesta.txt\'')
-        else:
             # Variables que indican el inicio de diferentes metadatos
             SOI = 0
             exif_header = 6
@@ -194,39 +148,70 @@ class Metadatos(Frame):
             inicio_campos = 23
 
             # Se obtienen los datos de la imagen en decimal y hexadecimal.
-            self.image = Image.open(self.path)
-            datos, hex_datos = abrir_imagen_bin(self.path)
+            self.image = Image.open(path)
+            datos, hex_datos = abrir_imagen_bin(path)
 
             # Orden: Big Endian o Little Endian
             orden = endian(datos, tiff_header)
-
-            res = ''
 
             # Revisar si el archivo es JPEG o no (JPEG == ffd8)
             if hex_datos[SOI][0] != 'f' or hex_datos[SOI][1] != 'f' or hex_datos[SOI + 1][0] != 'd' or \
                     hex_datos[SOI + 1][
                         1] != '8':
-                messagebox.showerror(title='Error', message='No es un archivo JPEG')
-                return
+                meta_tags.picture_type = 'Otro'
+                files_meta_tags.append(meta_tags)
+                continue
+
             elif not check_exif(datos[exif_header: tiff_header]):
-                messagebox.showerror(title='Error', message='El archivo no es archivo EXIF')
-                return
+                meta_tags.is_exif = False
+                files_meta_tags.append(meta_tags)
+                continue
 
             # --------Nueva implementacion--------
             try:
-                file = open(self.path, 'rb')
+                file = open(path, 'rb')
                 metadata = exifread.process_file(file)
                 metadata.pop('JPEGThumbnail')
             except:
-                file = open(self.path, 'rb')
+                file = open(path, 'rb')
                 metadata = exifread.process_file(file)
 
-            dimensiones = metadatos_info.start_of_frame(hex_datos, orden)
-            metadata = metadatos_info.brightness(metadata)
+            meta_tags.exifread_tags = {
+            key : {
+                'field_length':value.field_length,
+                'field_offset':value.field_offset,
+                'field_type':value.field_type,
+                'printable':value.printable,
+                'tag':value.tag,
+                'values':str(value.values)
+            } for (key, value) in metadata.items()}
+            dimensiones, thumbnail_dimensions, image_dimensions, jpeg_mode = \
+                additional_metadata.start_of_frame(hex_datos, orden)
+            meta_tags.thumbnail_dimensions = thumbnail_dimensions
+            meta_tags.image_dimensions = image_dimensions
+            meta_tags.jpeg_mode = jpeg_mode
+            brightness = additional_metadata.brightness(metadata['EXIF FNumber'], metadata['EXIF ExposureTime'],
+                                                        metadata['EXIF ISOSpeedRatings'])
+            metadata['Brightness'] = 'No se puede calcular el brillo' if brightness is None else brightness
+            meta_tags.brightness = brightness
             for key, value in dimensiones.items():
                 metadata[key] = value
-            cont = 0
-            rows = []
+
+
+            # ------Nueva implementacion--------
+            disp_mat_dict, mat_dict = additional_metadata.matrices(hex_datos)
+            meta_tags.luminance_matrix_thumbnail = mat_dict['luminance_matrix_thumbnail']
+            meta_tags.chrominance_matrix_thumbnail = mat_dict['chrominance_matrix_thumbnail']
+            meta_tags.luminance_matrix_image = mat_dict['luminance_matrix_image']
+            meta_tags.chrominance_matrix_image = mat_dict['chrominance_matrix_image']
+
+            files_meta_tags.append(meta_tags)
+
+
+
+        if len(self.path) == 1:
+            for key, value in dimensiones.items():
+                metadata[key] = value
             frame = Frame(width=500, height=100)
             frame.place(x=10, y=250)
             cols = ('Datos', 'Valor')
@@ -235,16 +220,18 @@ class Metadatos(Frame):
                 listbox.heading(col, text=col)
                 listbox.column(col, width=330)
             listbox.grid(row=1, column=0, columnspan=2)
-
             for key, value in metadata.items():
                 listbox.insert('', 'end', values=(key, value))
-
-
-
-            # ------Nueva implementacion--------
-            mat_dict = metadatos_matriz.matrices(hex_datos)
-            for key, value in mat_dict.items():
+            for key, value in disp_mat_dict.items():
                 listbox.insert('', 'end', values=(key, value))
+            return
+
+        #Se guardan los resultados
+        exporter.exportar_a_json(files_meta_tags, 'respuesta.json')
+        exporter.exportar_a_txt(files_meta_tags, 'respuesta.txt')
+
+        messagebox.showinfo(title='Info', message='Resultados se guardaron en \'respuesta.txt\'')
+
 
 def abrir_imagen_bin(path):
     datos = []
